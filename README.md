@@ -1,6 +1,22 @@
 # EvolveGCNO_improved
 This is the implementation of `EvolveGCNO-improved` model defined in `Misbehavior Detection with Spatio-Temporal Graph Neural Networks` paper.
 
+Please kindly cite the paper as 
+
+```bibtext
+
+@article{yuce2024misbehavior,
+  title={Misbehavior detection with spatio-temporal graph neural networks},
+  author={Yuce, Mehmet Fatih and Erturk, Mehmet Ali and Aydin, Muhammed Ali},
+  journal={Computers and Electrical Engineering},
+  volume={116},
+  pages={109198},
+  year={2024},
+  publisher={Elsevier}
+}
+
+```
+
 # Steps
 The model generation consists of three stages.
 
@@ -82,3 +98,5 @@ conda install -c conda-forge ipympl
 
 
 # Model Tries
+
+`model_tries.py` and `model_tries.ipynb` contains manual tests that can be conducted for experiemntations.

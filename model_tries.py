@@ -92,7 +92,7 @@ ml_structure =ModelOps()
 # ml_structure.model = torch.load("../split1/saved_model_1681219225_1_4_0.7_11")
 # ml_structure.model = torch.load("../split1/saved_model_1681219225_5_2_0.7_2")
 # ml_structure.model = torch.load("../split1/lr_test_2/saved_model_1681301082_0.8_5_2_0.7_20")
-ml_structure.model = torch.load("/home/fatihyuce/work/projects/v2x/graf/pyg_tests/split1/lr_test_3/saved_model_1681336502_0.007_5_1_0.7_4" )
+ml_structure.model = torch.load("model/saved_model_1681336502_0.007_5_1_0.7_4" )
 base.SCORE_METHOD = "weighted"
 #with torch.autograd.profiler.profile(use_cuda=False) as prof:
 metrics = ml_structure.eval(test_dataset ,plot_model=True)
