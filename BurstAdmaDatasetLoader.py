@@ -26,12 +26,13 @@ class BurstAdmaDatasetLoader(object):
         else :
             self._dataset = dataset
     def _read_web_data(self):
-        file_name = ""
-        self_edges = '_with_features_as_self_edge' if self.features_as_self_edge else ''
-        if self.num_edges >= 0:
-            file_name = f"{os.path.dirname(os.path.realpath(__file__))}/data/myoutput_{self.num_edges}_edges{'_negative' if self.negative_edge else '_positive'}{self_edges}.json"
-        else:
-            file_name = f"{os.path.dirname(os.path.realpath(__file__))}/data/myoutput.json"
+        # file_name = ""
+        # self_edges = '_with_features_as_self_edge' if self.features_as_self_edge else ''
+        # if self.num_edges >= 0:
+            # file_name = f"{os.path.dirname(os.path.realpath(__file__))}/data/myoutput_{self.num_edges}_edges{'_negative' if self.negative_edge else '_positive'}{self_edges}.json"
+            # file_name = f"{os.path.dirname(os.path.realpath(__file__))}/data/myoutput_{self.num_edges}_edges{'_negative' if self.negative_edge else '_positive'}{self_edges}.json"
+        # else:
+        file_name = f"{os.path.dirname(os.path.realpath(__file__))}/data/burst_adma_with_cpm_multi_sensors_cls/burst_adma_with_cpm_multi_sensors999_cls_all__positive_with_features_as_self_edge.json"
         # print(os.path.dirname(os.path.realpath(__file__)))
         with open(file_name, "r") as outfile:
             self._dataset = json.load(outfile)
@@ -52,7 +53,7 @@ class BurstAdmaDatasetLoader(object):
 
     def _get_targets_and_features(self):
 
-        stacked_target = np.array(self._dataset["y"])
+        stacked_target = np.array(self._dataset["y_detected"])
         stacked_features = np.array(self._dataset["features"])
         
         standardized_features = (stacked_features - np.mean(stacked_features, axis=0)) / (
