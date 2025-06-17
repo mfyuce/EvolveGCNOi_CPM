@@ -13,7 +13,7 @@ from torch_geometric.explain.config import (
     ThresholdConfig,
     ThresholdType,
 )
-SCORE_METHOD = "weighted" # None, "micro", "macro", "samples", "weighted", "binary", "binary"
+SCORE_METHOD = None#"macro" # None, "micro", "macro", "samples", "weighted", "binary", "binary"
 
 class BaseGrafModelOps():
     def __init__(self, lr=0.01) -> None:
@@ -104,9 +104,14 @@ class BaseGrafModelOps():
         self.acc += self.step_acc #correct /  all 
         self.acc1 += self.step_acc1
         # try:
+        precision = None
+        recall = None
+        fscore = None
+        support = None
         if not SCORE_METHOD:
-            t = score(detached_y,  detached_y_hat, average=SCORE_METHOD,zero_division=1)
-            print (t)
+            with open("support_train.txt", "a")  as file1:  # append mode
+                t = score(detached_y,  detached_y_hat, average=SCORE_METHOD,zero_division=1)
+                file1.write(f"{str(t)}\n")
         else:
             precision, recall, fscore, support = score(detached_y,  detached_y_hat, average=SCORE_METHOD,zero_division=1)
 
@@ -116,10 +121,10 @@ class BaseGrafModelOps():
         self.step_s = 0 if support is None else support 
 
 
-        self.p += self.step_p 
-        self.r += self.step_r 
-        self.f += self.step_f 
-        self.s += self.step_s
+        self.p += self.step_p if self.step_p else 0 
+        self.r += self.step_r  if self.step_r else 0
+        self.f += self.step_f  if self.step_f else 0
+        self.s += self.step_s if self.step_s else 0
         # except:
             # num_minus+=1 
 
@@ -260,6 +265,8 @@ class BaseGrafModelOps():
         self.snapshot_epoch(0)
         model_plotted = False
         num_minus = 0
+        # Append-adds at last
+    
         for time, snapshot in enumerate(test_dataset):
             
             self.snapshot = snapshot
@@ -287,16 +294,21 @@ class BaseGrafModelOps():
             self.acc += accuracy_score(detached_y, detached_y_hat) #correct /  all 
             self.acc1 += correct/all
             # try:
+            precision =None
+            recall  =None
+            fscore  =None
+            support = None
             if not SCORE_METHOD:
-                t = score(detached_y,  detached_y_hat, average=SCORE_METHOD,zero_division=1)
-                print (t)
+                with open("support_eval.txt", "a")  as file1:  # append mode
+                    t = score(detached_y,  detached_y_hat, average=SCORE_METHOD,zero_division=1)
+                    file1.write(f"{str(t)}\n")
             else:
                 precision, recall, fscore, support = score(detached_y,  detached_y_hat, average=SCORE_METHOD,zero_division=1)
 
-            self.p += precision 
-            self.r += recall 
-            self.f += fscore 
-            self.s += 0 if support is None else support 
+            self.p += precision if precision else 0
+            self.r += recall  if precision else 0
+            self.f += fscore  if precision else 0
+            self.s += support if support   else 0 
             # except:
                 # num_minus+=1 
 
