@@ -12,6 +12,10 @@ fi
 export PATH="$HOME/miniconda3/bin:$PATH"
 eval "$($HOME/miniconda3/bin/conda shell.bash hook)"
 
+# Accept TOS for default channels (required on fresh installs)
+conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main 2>/dev/null || true
+conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r    2>/dev/null || true
+
 # ── 2. Conda env ────────────────────────────────────────────────
 ENV=egcnoi_env
 if ! conda env list | grep -q "^$ENV "; then
