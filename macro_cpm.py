@@ -20,6 +20,7 @@ torch.set_num_threads(1)
 from BurstAdmaDatasetLoader import BurstAdmaDatasetLoader
 from torch_geometric_temporal.nn.recurrent import GConvGRU, TGCN
 from torch_geometric.nn import GCNConv
+from graphs.recurrent.evolvegcnh_improved import EvolveGCNHImproved
 import graphs.recurrent.graphs_base as base
 
 MODEL = sys.argv[1] if len(sys.argv) > 1 else "gconvgru"
@@ -44,6 +45,25 @@ class TGCNNet(nn.Module):
     def forward(self, x, ei, ew, H=None):
         H = self.rec(x, ei, ew, H)
         return self.cl(F.dropout(F.relu(self.l1(H)), p=self.d, training=self.training)), H
+
+
+class EvolveNet(nn.Module):
+    def __init__(self, node_count, in_f, h=HIDDEN, d=0.5):
+        super().__init__(); self.rec = EvolveGCNHImproved(node_count, in_f)
+        self.c1 = GCNConv(in_f, h); self.c2 = GCNConv(h, h); self.c3 = GCNConv(h, h)
+        self.cl = nn.Linear(h, 2); self.d = d
+    def reset(self):
+        object.__setattr__(self.rec, "weight", None)
+    def forward(self, x, ei, ew):
+        X = self.rec.pooling_layer(x, ei); X = X[0][None, :, :]
+        if self.rec.weight is None:
+            object.__setattr__(self.rec, "weight", self.rec.initial_weight)
+        _, W = self.rec.recurrent_layer(X, self.rec.weight[None, :, :]); W = W.squeeze(0)
+        object.__setattr__(self.rec, "weight", W)
+        hh = self.rec.conv_layer(W, x, ei, ew)
+        hh = F.relu(self.c1(hh, ei, ew)); hh = F.relu(self.c2(hh, ei, ew))
+        hh = F.dropout(hh, p=self.d, training=self.training)
+        return self.cl(F.relu(self.c3(hh, ei, ew)))
 
 
 class StaticGCN(nn.Module):
@@ -102,6 +122,8 @@ def main():
         model = GConvGRUNet(in_f)
     elif MODEL == "tgcn":
         model = TGCNNet(in_f)
+    elif MODEL == "evolve":
+        model = EvolveNet(n_nodes, in_f)
     else:
         model = StaticGCN(in_f)
     opt = torch.optim.Adam(model.parameters(), lr=LR)
@@ -109,6 +131,8 @@ def main():
     out(f"\nTraining {EPOCHS} epochs (WINDOW={WINDOW}, lr={LR})...")
     for ep in range(EPOCHS):
         H = None
+        if MODEL == "evolve":
+            model.reset()
         for st in range(0, n_tr, WINDOW):
             if IS_REC and H is not None:
                 H = H.detach()
@@ -129,6 +153,8 @@ def main():
 
     # evaluate on test vehicles
     model.eval(); P, L = [], []; H = None
+    if MODEL == "evolve":
+        model.reset()
     with torch.no_grad():
         for i in range(T - lags):
             if IS_REC:
