@@ -26,10 +26,12 @@ conda activate $ENV
 
 # ── 3. Core packages ────────────────────────────────────────────
 echo "Installing packages..."
-# PyTorch CPU-only
+# PyTorch CPU-only (must be first)
 pip install torch==2.0.1 --index-url https://download.pytorch.org/whl/cpu -q
 
-# PyG + PyG Temporal
+# PyG prebuilt wheels for torch 2.0.1 cpu (avoids source build)
+pip install torch_scatter torch_sparse torch_cluster torch_spline_conv \
+    -f https://data.pyg.org/whl/torch-2.0.1+cpu.html -q
 pip install torch_geometric -q
 pip install torch_geometric_temporal -q
 
