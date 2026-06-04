@@ -136,6 +136,8 @@ def main():
         for st in range(0, n_tr, WINDOW):
             if IS_REC and H is not None:
                 H = H.detach()
+            if MODEL == "evolve":
+                model.reset()
             opt.zero_grad(); wl = 0.0; c = 0
             for i in range(st, min(st + WINDOW, n_tr)):
                 m = active[i] & trv
