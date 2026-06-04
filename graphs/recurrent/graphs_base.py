@@ -1,9 +1,9 @@
+import numpy as np
 import torch
 import torch.nn.functional as F
 from sklearn.metrics import precision_recall_fscore_support as score, accuracy_score, matthews_corrcoef
 import hiddenlayer as hl
 from tqdm import tqdm
-# criterion = torch.nn.CrossEntropyLoss()
 from torch_geometric.explain import Explainer, GNNExplainer
 from torch_geometric.explain.config import (
     ExplainerConfig,
@@ -13,7 +13,19 @@ from torch_geometric.explain.config import (
     ThresholdConfig,
     ThresholdType,
 )
-SCORE_METHOD = None#"macro" # None, "micro", "macro", "samples", "weighted", "binary", "binary"
+SCORE_METHOD = "weighted"  # None, "micro", "macro", "samples", "weighted", "binary"
+
+
+def _snapshot_class_weights(y_tensor: torch.Tensor) -> torch.Tensor:
+    """Inverse-frequency class weights for the two classes in a snapshot."""
+    y_np = y_tensor.cpu().numpy().astype(int)
+    classes, counts = np.unique(y_np, return_counts=True)
+    n = len(y_np)
+    w = torch.ones(2, dtype=torch.float32)
+    for c, cnt in zip(classes, counts):
+        if 0 <= int(c) < 2:
+            w[int(c)] = n / (max(len(classes), 1) * cnt)
+    return w
 
 class BaseGrafModelOps():
     def __init__(self, lr=0.01) -> None:
@@ -91,49 +103,41 @@ class BaseGrafModelOps():
             # self.dots = hl.build_graph(self.model, self.snapshot.edge_index, self.snapshot.edge_attr)
         
         pred = y_hat.argmax(dim=1)
-        detached_y = snapshot.y.detach().cpu().numpy().round()
-        detached_y_hat =  y_hat.detach().cpu().numpy().round()
-        correct = (pred.detach().cpu().numpy().round() == detached_y).sum()
+        detached_y    = snapshot.y.detach().cpu().numpy().astype(int)
+        detached_pred = pred.detach().cpu().numpy().astype(int)
+        correct = (detached_pred == detached_y).sum()
         all = len(snapshot.y)
 
-        self.step_m = matthews_corrcoef(detached_y, detached_y_hat)
-        self.step_acc = accuracy_score(detached_y, detached_y_hat) #correct /  all 
-        self.step_acc1 = correct/all
+        self.step_m    = matthews_corrcoef(detached_y, detached_pred)
+        self.step_acc  = accuracy_score(detached_y, detached_pred)
+        self.step_acc1 = correct / all
 
-        self.m += self.step_m
-        self.acc += self.step_acc #correct /  all 
+        self.m    += self.step_m
+        self.acc  += self.step_acc
         self.acc1 += self.step_acc1
-        # try:
-        precision = None
-        recall = None
-        fscore = None
-        support = None
+
         if not SCORE_METHOD:
-            with open("support_train.txt", "a")  as file1:  # append mode
-                t = score(detached_y,  detached_y_hat, average=SCORE_METHOD,zero_division=1)
-                file1.write(f"{str(t)}\n")
+            t = score(detached_y, detached_pred, average=SCORE_METHOD, zero_division=1)
+            print(t)
         else:
-            precision, recall, fscore, support = score(detached_y,  detached_y_hat, average=SCORE_METHOD,zero_division=1)
+            precision, recall, fscore, support = score(
+                detached_y, detached_pred, average=SCORE_METHOD, zero_division=1
+            )
 
-        self.step_p = precision 
-        self.step_r = recall 
-        self.step_f = fscore 
-        self.step_s = 0 if support is None else support 
+        self.step_p = precision
+        self.step_r = recall
+        self.step_f = fscore
+        self.step_s = 0 if support is None else support
 
+        self.p += self.step_p
+        self.r += self.step_r
+        self.f += self.step_f
+        self.s += self.step_s
 
-        self.p += self.step_p if self.step_p else 0 
-        self.r += self.step_r  if self.step_r else 0
-        self.f += self.step_f  if self.step_f else 0
-        self.s += self.step_s if self.step_s else 0
-        # except:
-            # num_minus+=1 
-
-        # precision1, recall1, fscore1, support1 = score(snapshot.y.round().detach().numpy(),  \
-        #                                            y_hat.round().detach().numpy(), average=SCORE_METHOD,zero_division=1,\
-        #                                             labels=self.loader._dataset["node_labels"])
-            
-        self.step_cost =  torch.mean((y_hat-snapshot.y)**2)
-        self.cost += self.step_cost
+        # CrossEntropyLoss with per-snapshot class weights (handles ~99 % benign imbalance).
+        cw = _snapshot_class_weights(snapshot.y).to(y_hat.device)
+        self.step_cost = F.cross_entropy(y_hat, snapshot.y.long().to(y_hat.device), weight=cw)
+        self.cost = self.cost + self.step_cost
         # self.cost = self.cost + criterion(y_hat, snapshot.y)
         # # Store metrics in the history object
         # self.plot_index+=1
@@ -286,37 +290,31 @@ class BaseGrafModelOps():
                 # self.dots = hl.build_graph(self.model, self.snapshot.edge_index, self.snapshot.edge_attr)
             
             pred = y_hat.argmax(dim=1)
-            detached_y = snapshot.y.detach().cpu().numpy().round()
-            detached_y_hat =  y_hat.detach().cpu().numpy().round()
-            correct = (pred.detach().cpu().numpy().round() == detached_y).sum()
+            detached_y    = snapshot.y.detach().cpu().numpy().astype(int)
+            detached_pred = pred.detach().cpu().numpy().astype(int)
+            correct = (detached_pred == detached_y).sum()
             all = len(snapshot.y)
-            self.m += matthews_corrcoef(detached_y, detached_y_hat)
-            self.acc += accuracy_score(detached_y, detached_y_hat) #correct /  all 
-            self.acc1 += correct/all
-            # try:
-            precision =None
-            recall  =None
-            fscore  =None
-            support = None
+            self.m    += matthews_corrcoef(detached_y, detached_pred)
+            self.acc  += accuracy_score(detached_y, detached_pred)
+            self.acc1 += correct / all
+
             if not SCORE_METHOD:
-                with open("support_eval.txt", "a")  as file1:  # append mode
-                    t = score(detached_y,  detached_y_hat, average=SCORE_METHOD,zero_division=1)
-                    file1.write(f"{str(t)}\n")
+                t = score(detached_y, detached_pred, average=SCORE_METHOD, zero_division=1)
+                print(t)
             else:
-                precision, recall, fscore, support = score(detached_y,  detached_y_hat, average=SCORE_METHOD,zero_division=1)
+                precision, recall, fscore, support = score(
+                    detached_y, detached_pred, average=SCORE_METHOD, zero_division=1
+                )
 
-            self.p += precision if precision else 0
-            self.r += recall  if precision else 0
-            self.f += fscore  if precision else 0
-            self.s += support if support   else 0 
-            # except:
-                # num_minus+=1 
+            self.p += precision
+            self.r += recall
+            self.f += fscore
+            self.s += 0 if support is None else support
 
-            # precision1, recall1, fscore1, support1 = score(snapshot.y.round().detach().numpy(),  \
-            #                                            y_hat.round().detach().numpy(), average=SCORE_METHOD,zero_division=1,\
-            #                                             labels=self.loader._dataset["node_labels"])
-                
-            self.cost = self.cost + torch.mean((y_hat-snapshot.y)**2)
+            cw = _snapshot_class_weights(snapshot.y).to(y_hat.device)
+            self.cost = self.cost + F.cross_entropy(
+                y_hat, snapshot.y.long().to(y_hat.device), weight=cw
+            )
             # self.cost = self.cost + criterion(y_hat, snapshot.y)
             # # Store metrics in the history object
             # self.plot_index+=1

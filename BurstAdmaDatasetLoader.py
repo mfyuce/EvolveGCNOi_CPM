@@ -17,10 +17,11 @@ class BurstAdmaDatasetLoader(object):
     `"Transfer Graph Neural Networks for Pandemic Forecasting." <https://arxiv.org/abs/2009.08388>`_
     """
 
-    def __init__(self, num_edges=0, negative_edge=False, features_as_self_edge=False, dataset=None):
+    def __init__(self, num_edges=0, negative_edge=False, features_as_self_edge=False, dataset=None, binary=True):
         self.num_edges = num_edges
         self.negative_edge = negative_edge
         self.features_as_self_edge = features_as_self_edge
+        self.binary = binary
         if dataset is None:
             self._read_web_data()
         else :
@@ -53,28 +54,38 @@ class BurstAdmaDatasetLoader(object):
 
     def _get_targets_and_features(self):
 
-        stacked_target = np.array(self._dataset["y_detected"])
-        stacked_features = np.array(self._dataset["features"])
-        
-        standardized_features = (stacked_features - np.mean(stacked_features, axis=0)) / (
-            np.std(stacked_features, axis=0) + 10 ** -10
-        )
-        standardized_target = (stacked_target - np.mean(stacked_target, axis=0)) / (
-            np.std(stacked_target, axis=0) + 10 ** -10
-        )
-        # self.features = [
-        #     standardized_features[i : i + self.lags, :].T
-        #     for i in range(self._dataset["time_periods"] - self.lags)
-        # ]
+        stacked_target   = np.array(self._dataset["y_detected"])  # (T, N)
+        stacked_features = np.array(self._dataset["features"])    # (T, N, F) or (T, N)
 
-        self.features = [
-            standardized_target[i : i + self.lags, :].T
-            for i in range(self._dataset["time_periods"] - self.lags)
-        ]
+        f_mean = np.mean(stacked_features, axis=0, keepdims=True)
+        f_std  = np.std(stacked_features,  axis=0, keepdims=True)
+        standardized_features = (stacked_features - f_mean) / (f_std + 1e-10)
+
+        if stacked_features.ndim == 3:
+            self.features = [
+                standardized_features[i, :, :]
+                for i in range(self._dataset["time_periods"] - self.lags)
+            ]
+        else:
+            self.features = [
+                standardized_features[i : i + self.lags, :].T
+                for i in range(self._dataset["time_periods"] - self.lags)
+            ]
+
+        if self.binary:
+            label_array = (stacked_target != 0).astype(np.int64)
+        else:
+            label_array = stacked_target.astype(np.int64)
         self.targets = [
-            standardized_target[i + self.lags, :].T
+            label_array[i + self.lags, :]
             for i in range(self._dataset["time_periods"] - self.lags)
         ]
+
+    @property
+    def n_node_features(self) -> int:
+        """Number of kinematic features per node (F in the (T, N, F) array)."""
+        f = np.array(self._dataset["features"])
+        return int(f.shape[-1]) if f.ndim == 3 else 1
 
     def get_dataset(self, lags: int = 8) -> DynamicGraphTemporalSignal:
         """Returning the England COVID19 data iterator.
