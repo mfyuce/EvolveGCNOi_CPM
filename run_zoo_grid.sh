@@ -9,7 +9,8 @@ cd "$(dirname "$0")"
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate egcnoi_env
 
-PAR="${1:-24}"   # maya has 64 cores; each run is single-threaded + ~0.5 GB via .pt cache
+PAR="${1:-14}"   # maya: 64 cores / 125 GB. Each run is single-threaded but the
+                 # .pt cache loads ~3.5-4 GB, so RAM (not cores) caps parallelism.
 OUT=zoo_results
 mkdir -p "$OUT"
 SUMMARY="$OUT/RESULTS.txt"
