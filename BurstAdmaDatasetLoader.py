@@ -17,24 +17,22 @@ class BurstAdmaDatasetLoader(object):
     `"Transfer Graph Neural Networks for Pandemic Forecasting." <https://arxiv.org/abs/2009.08388>`_
     """
 
-    def __init__(self, num_edges=0, negative_edge=False, features_as_self_edge=False, dataset=None, binary=True):
+    def __init__(self, num_edges=0, negative_edge=False, features_as_self_edge=False, dataset=None, binary=True, json_path=None):
         self.num_edges = num_edges
         self.negative_edge = negative_edge
         self.features_as_self_edge = features_as_self_edge
         self.binary = binary
+        self._json_path = json_path
         if dataset is None:
             self._read_web_data()
-        else :
+        else:
             self._dataset = dataset
+
     def _read_web_data(self):
-        # file_name = ""
-        # self_edges = '_with_features_as_self_edge' if self.features_as_self_edge else ''
-        # if self.num_edges >= 0:
-            # file_name = f"{os.path.dirname(os.path.realpath(__file__))}/data/myoutput_{self.num_edges}_edges{'_negative' if self.negative_edge else '_positive'}{self_edges}.json"
-            # file_name = f"{os.path.dirname(os.path.realpath(__file__))}/data/myoutput_{self.num_edges}_edges{'_negative' if self.negative_edge else '_positive'}{self_edges}.json"
-        # else:
-        file_name = f"{os.path.dirname(os.path.realpath(__file__))}/data/burst_adma_with_cpm_multi_sensors_cls/burst_adma_with_cpm_multi_sensors999_cls_all__positive_with_features_as_self_edge.json"
-        # print(os.path.dirname(os.path.realpath(__file__)))
+        if self._json_path is not None:
+            file_name = self._json_path
+        else:
+            file_name = f"{os.path.dirname(os.path.realpath(__file__))}/data/burst_adma_with_cpm_multi_sensors_cls/burst_adma_with_cpm_multi_sensors999_cls_all__positive_with_features_as_self_edge.json"
         with open(file_name, "r") as outfile:
             self._dataset = json.load(outfile)
 
