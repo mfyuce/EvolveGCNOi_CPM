@@ -163,4 +163,15 @@ cython_debug/
 runs/**
 /imported_data/**
 model/saved_model_1681336502_0.007_5_1_0
+model/old/
 data/**
+burst_adma_with_cpm_multi_sensors_cls/
+catboost_info/
+.idea/
+.vscode/
+*copy*.ipynb
+*copy*.py
+*copy*.yaml
+rt.txt
+rt_all.txt
+RESULTS.md

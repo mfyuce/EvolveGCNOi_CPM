@@ -51,7 +51,10 @@ rm ~/miniconda3/miniconda.sh
 ```
 
 Do not forget to update .bashrc
-
+## To Yaml
+```
+conda env export  > export.yaml
+```
 ## From Yaml
 
 ```bash
