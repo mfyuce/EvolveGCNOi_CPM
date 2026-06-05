@@ -32,6 +32,7 @@ def parse_args():
     p.add_argument("model")
     p.add_argument("seed", type=int, nargs="?", default=3)
     p.add_argument("--dataset", default=None, help="path to JSON (default: v1 in repo)")
+    p.add_argument("--cache", default=None, help="path to a .pt cache from prep_cache.py (fast load)")
     p.add_argument("--epochs", type=int, default=40)
     p.add_argument("--window", type=int, default=24)
     p.add_argument("--hidden", type=int, default=32)
@@ -66,32 +67,38 @@ def main():
     t0 = time.time()
     def out(m): print(m, flush=True)
 
-    ds_name = os.path.basename(args.dataset) if args.dataset else "v1(default)"
+    ds_name = (os.path.basename(args.cache) if args.cache
+               else os.path.basename(args.dataset) if args.dataset else "v1(default)")
     out(f"=== ZOO — {args.model} (seed={args.seed}) dataset={ds_name} "
         f"H={args.hidden} W={args.window} ep={args.epochs} lr={args.lr} "
         f"proj={args.proj} pool={args.pool_ratio} ===")
 
-    out("Loading dataset...")
-    lb = BurstAdmaDatasetLoader(features_as_self_edge=True, binary=True,
-                                json_path=args.dataset)
-    ds = lb.get_dataset(lags=args.lags)
-    alls = list(ds)
-    n_nodes = len(lb._dataset["node_labels"])
-    T = lb._dataset["time_periods"]
-    lags = lb.lags
-    in_f = lb.n_node_features
+    if args.cache:
+        out(f"Loading cache {args.cache} ...")
+        c = torch.load(args.cache)
+        X, EI, EW, Y, active = c["X"], c["EI"], c["EW"], c["Y"], c["active"]
+        node_label = c["node_label"].numpy()
+        n_nodes, T, lags, in_f = c["n_nodes"], c["T"], c["lags"], c["in_f"]
+    else:
+        out("Loading dataset (JSON)...")
+        lb = BurstAdmaDatasetLoader(features_as_self_edge=True, binary=True,
+                                    json_path=args.dataset)
+        ds = lb.get_dataset(lags=args.lags)
+        alls = list(ds)
+        n_nodes = len(lb._dataset["node_labels"])
+        T = lb._dataset["time_periods"]
+        lags = lb.lags
+        in_f = lb.n_node_features
+        X  = [torch.as_tensor(a.x, dtype=torch.float32) for a in alls]
+        Y  = [torch.tensor(lb.targets[i], dtype=torch.long) for i in range(T - lags)]
+        EI = [torch.as_tensor(a.edge_index, dtype=torch.long) for a in alls]
+        EW = [torch.as_tensor(a.edge_attr, dtype=torch.float32) for a in alls]
+        active = [(X[i].abs().sum(1) != 0.0) for i in range(T - lags)]
+        yf = np.stack([lb.targets[i] for i in range(T - lags)])
+        node_label = (yf.max(0) > 0).astype(int)
     out(f"Loaded: T={T} N={n_nodes} F={in_f}  ({time.time()-t0:.1f}s)")
 
-    active = [torch.tensor(np.asarray(alls[i].x).__abs__().sum(1) != 0.0)
-              for i in range(T - lags)]
-    X  = [torch.as_tensor(a.x, dtype=torch.float32) for a in alls]
-    Y  = [torch.tensor(lb.targets[i], dtype=torch.long) for i in range(T - lags)]
-    EI = [torch.as_tensor(a.edge_index, dtype=torch.long) for a in alls]
-    EW = [torch.as_tensor(a.edge_attr, dtype=torch.float32) for a in alls]
-
     # vehicle-disjoint split, stratified by ever-attacker
-    yf = np.stack([lb.targets[i] for i in range(T - lags)])
-    node_label = (yf.max(0) > 0).astype(int)
     rng = np.random.default_rng(args.seed); trm = np.zeros(n_nodes, dtype=bool)
     for c in (0, 1):
         idx = np.where(node_label == c)[0]; rng.shuffle(idx)
