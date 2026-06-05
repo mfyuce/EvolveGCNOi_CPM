@@ -5,21 +5,15 @@ Produces the v2 CPM GNN dataset from the existing v1 JSON.
 
 Changes vs v1
 -------------
-1. Self-loop edge weights normalised: z-score per feature.
-   Edge structure: every detection event produces 7 consecutive self-loops
-   for the detecting node carrying its features in order:
-     [x, y, heading, speed, acceleration, sensor_range, visibility_range]
-   These raw values had a huge scale mismatch (x~145, y~-37) against the
-   proximity edge weights which are detection_confidence in [0,1].
-   v2 z-scores each feature slot using global mean/std computed across all
-   non-zero nodes and timesteps.
-
-2. detection_confidence added as 10th node feature (F 9 -> 10).
+1. detection_confidence added as the 10th node feature (F 9 -> 10).
    Per-node value = mean incoming detection_confidence at each timestep
-   (0 if the node received no CPM observation that step).
+   (0 if the node received no CPM observation that step). Stored RAW; the
+   loader standardises features at load time.
 
-3. "feat_norm" key in JSON stores the normalisation statistics so loaders
-   can invert the transform if needed.
+Edges (index + weight) are kept IDENTICAL to v1. An earlier draft z-scored
+the self-loop edge weights, but the resulting negative weights made GCN
+degree normalisation (deg^{-1/2}) produce NaN — edge weights feeding a GCN
+must stay non-negative, so v2 changes node features only.
 
 Output
 ------
@@ -35,7 +29,6 @@ OUT_DIR  = "data/v2"
 OUT_JSON = os.path.join(OUT_DIR, "burst_adma_with_cpm_multi_sensors999_cls_all_v2.json")
 OUT_ZIP  = os.path.join(OUT_DIR, "burst_adma_with_cpm_multi_sensors999_cls_all_v2.zip")
 OUT_README = os.path.join(OUT_DIR, "README.txt")
-SELF_FEAT_DIM = 7   # [x, y, heading, speed, acc, sensor_range, vis_range]
 
 os.makedirs(OUT_DIR, exist_ok=True)
 
@@ -54,21 +47,11 @@ edge_index  = v1["edge_index"]
 edge_weight = v1["edge_weight"]
 print(f"  loaded in {time.time()-t0:.1f}s  T={T} N={N} F={features.shape[2]}", flush=True)
 
-# ── 2. Normalisation stats from node feature array ───────────────────────────
-# features[:, :, :7] = [x, y, heading, speed, acc, sensor_range, vis_range]
-# Use only non-zero (active) nodes.
-print("Computing normalisation stats ...", flush=True)
-feat7       = features[:, :, :SELF_FEAT_DIM]           # (T, N, 7)
-active_mask = (features.sum(axis=2) != 0)              # (T, N)
-feat7_flat  = feat7[active_mask]                        # (M, 7)
-feat_mean   = feat7_flat.mean(axis=0)                   # (7,)
-feat_std    = feat7_flat.std(axis=0)                    # (7,)
-feat_std[feat_std == 0] = 1.0
-
-print(f"  mean: {np.round(feat_mean, 2)}", flush=True)
-print(f"  std:  {np.round(feat_std,  2)}", flush=True)
-
-# ── 3. Per-node mean detection_confidence → new node feature (dim 9) ─────────
+# ── 2. Per-node mean detection_confidence → new node feature (dim 9) ─────────
+# NOTE: edge weights are kept VERBATIM from v1. An earlier v2 draft z-scored the
+# self-loop edge weights to mean 0; the resulting NEGATIVE weights made the GCN
+# degree normalisation deg^{-1/2} produce NaN. Edge weights feeding a GCN must
+# stay non-negative, so v2 only ADDS a node feature and leaves the graph alone.
 print("Building detection_confidence node feature ...", flush=True)
 conf_feat = np.zeros((T, N), dtype=np.float32)
 for step_str, ei_list in edge_index.items():
@@ -87,32 +70,10 @@ print(f"  conf_feat: mean={conf_feat[conf_feat>0].mean():.3f}  max={conf_feat.ma
 
 features_v2 = np.concatenate([features, conf_feat[:, :, np.newaxis]], axis=2)  # (T,N,10)
 
-# ── 4. Normalise self-loop edge weights ───────────────────────────────────────
-# Pattern per timestep: each node may have multiple groups of exactly 7
-# consecutive self-loops (one group per detection event it participates in).
-# feat_idx cycles 0..6 within each group; track per-node count.
-print("Normalising self-loop edge weights ...", flush=True)
-edge_weight_v2 = {}
-for step_str, ei_list in edge_index.items():
-    ew_list    = edge_weight[step_str]
-    ew_v2      = []
-    self_count = {}      # node → cumulative self-loop count this step
-    for (src, dst), w in zip(ei_list, ew_list):
-        if src != dst:
-            ew_v2.append(float(w))    # prox: detection_confidence unchanged
-        else:
-            cnt      = self_count.get(src, 0)
-            feat_idx = cnt % SELF_FEAT_DIM
-            norm_w   = (w - float(feat_mean[feat_idx])) / float(feat_std[feat_idx])
-            ew_v2.append(float(norm_w))
-            self_count[src] = cnt + 1
-    edge_weight_v2[step_str] = ew_v2
+# ── 3. Edge weights: kept verbatim from v1 (must stay non-negative for GCN) ──
+edge_weight_v2 = edge_weight
 
-# ── 5. Sanity check ──────────────────────────────────────────────────────────
-step0_ew_self = [w for (s,d), w in zip(edge_index['0'], edge_weight_v2['0']) if s == d]
-print(f"  step0 self ew sample (should be ~N(0,1)): {[round(w,3) for w in step0_ew_self[:7]]}", flush=True)
-
-# ── 6. Write v2 JSON ──────────────────────────────────────────────────────────
+# ── 4. Write v2 JSON ──────────────────────────────────────────────────────────
 print("Writing v2 JSON ...", flush=True)
 t1 = time.time()
 v2_out = {
@@ -123,12 +84,9 @@ v2_out = {
     "y_detected":   y_detected,
     "edge_index":   edge_index,
     "edge_weight":  edge_weight_v2,
-    "feat_norm": {
-        "self_loop_mean": feat_mean.tolist(),
-        "self_loop_std":  feat_std.tolist(),
-        "feature_order":  ["x","y","heading","speed","acceleration","sensor_range","visibility_range"],
-        "note":           "self-loop ew are z-scored; prox ew = detection_confidence (unchanged)"
-    }
+    "note": "v2 = v1 with a 10th node feature (mean incoming detection_confidence). "
+            "Edges (index + weight) are identical to v1. Node features are RAW; "
+            "standardise at load time (BurstAdmaDatasetLoader z-scores per feature)."
 }
 with open(OUT_JSON, "w") as f:
     json.dump(v2_out, f)
@@ -157,15 +115,13 @@ Reference paper
 
 Changes vs v1
 -------------
-1. Self-loop edge weights z-score normalised per feature (7 dimensions:
-   x, y, heading, speed, acceleration, sensor_range, visibility_range).
-   v1 stored raw coordinate/speed values causing large scale mismatch
-   against the 0-1 detection_confidence proximity weights.
-2. Node feature vector extended: F 9 -> 10.
-   Index 9 = mean incoming detection_confidence for each node at each
-   timestep (0 if no CPM observation received that step).
-3. JSON includes "feat_norm" key with mean/std used for self-loop
-   normalisation (for reference / inverse transform).
+1. Node feature vector extended: F 9 -> 10. Index 9 = mean incoming
+   detection_confidence for each node at each timestep (0 if no CPM
+   observation received that step). Stored RAW; standardise at load time.
+
+Edges (index + weight) are IDENTICAL to v1. (An earlier draft z-scored the
+self-loop edge weights, but negative weights break GCN deg^{-1/2}
+normalisation, so v2 changes node features only.)
 
 Files
 -----
@@ -195,12 +151,11 @@ features       (T, N, 10) list      Per-node CPM feature vector
 y_detected     (T, N) list          Misbehavior label per node per step
                                     0 = benign; 1..7 = attack type
 edge_index     {"t": [[s,d]]}       Proximity + self-loop edges per timestep
-edge_weight    {"t": [w]}           Aligned weights:
+                                    (identical to v1)
+edge_weight    {"t": [w]}           Aligned weights (identical to v1):
                                     prox edges  : detection_confidence (0-1)
-                                    self-loops  : z-score normalised feature
-                                                  (normalisation in feat_norm)
-feat_norm      dict                 Normalisation stats for self-loop ew:
-                                    self_loop_mean, self_loop_std (len 7)
+                                    self-loops  : the node's own raw feature
+                                                  values (features-as-self-edge)
 
 Usage
 -----
