@@ -1,0 +1,20 @@
+/home/maya/miniconda3/envs/egcnoi_env/lib/python3.10/site-packages/sklearn/experimental/enable_hist_gradient_boosting.py:18: UserWarning: Since version 1.0, it is not needed to import enable_hist_gradient_boosting anymore. HistGradientBoostingClassifier and HistGradientBoostingRegressor are now stable and can be normally imported from sklearn.ensemble.
+  warnings.warn(
+cache=data/cache_v1_rich.pt samples=729,270 malicious=4.23% (2s)
+
+subset                   model MCC(mean±std)     AUC
+--------------------------------------------------
+RAW(9)                   RF     36.2± 6.2  0.909
+RAW(9)                   HGB    36.4± 5.6  0.914
+physics+struct(4)        RF     38.2± 6.8  0.894
+physics+struct(4)        HGB    45.7± 4.1  0.950
+RICH(11)                 RF     60.9± 2.7  0.967
+RICH(11)                 HGB    53.9± 3.9  0.965
+RAW+RICH(20)             RF     61.4± 2.8  0.968
+RAW+RICH(20)             HGB    56.4± 2.5  0.967
+RAW+RICH -sensor_type    RF     63.3± 2.5  0.971
+RAW+RICH -sensor_type    HGB    56.6± 2.7  0.967
+RAW+RICH -position       RF     65.5± 2.2  0.973
+RAW+RICH -position       HGB    56.6± 3.0  0.967
+
+[robustness: RAW+RICH vs -sensor_type ~equal => 65.1 does NOT rest on the artifact]
