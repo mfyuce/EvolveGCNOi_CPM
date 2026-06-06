@@ -1,0 +1,58 @@
+===V1===
+=== cache=data/cache_v1.pt  F=9  node-step samples=729,270  (2s) ===
+class balance: malicious = 4.23%  (30,860/729,270)
+ seed1: train=509,490 test=219,780 | MCC all= 32.4 (AUC 0.902, malF1 27.3) | no-pos= 32.3 | pos-only= 25.3
+ seed2: train=509,490 test=219,780 | MCC all= 48.5 (AUC 0.920, malF1 41.5) | no-pos= 46.6 | pos-only= 27.7
+ seed3: train=509,490 test=219,780 | MCC all= 33.7 (AUC 0.913, malF1 32.2) | no-pos= 34.2 | pos-only= 27.9
+
+-- data/cache_v1.pt  mean over 3 seeds --
+RF all features : MCC  38.2   ROC-AUC 0.912   malicious-F1 33.7
+RF NO position  : MCC  37.7   (drop +0.5)
+RF position only: MCC  27.0
+
+permutation importance (MCC drop x100 when feature shuffled, seed 3):
+  y              +20.8  #########################################
+  sensor_type    +20.7  #########################################
+  speed           +5.2  ##########
+  x               +3.9  #######
+  sensor_range    +3.3  ######
+  visibility      +2.3  ####
+  heading         +2.0  ####
+  weather         +1.3  ##
+  accel           +0.5  #
+
+[BuST-ADMA ref: vd MCC ~56 raw / ~75 eng; abs-x is top feature, ~31 MCC drop if removed]
+
+===V1AUG===
+=== cache=data/cache_v1_aug.pt  F=17  node-step samples=729,270  (2s) ===
+class balance: malicious = 4.23%  (30,860/729,270)
+ seed1: train=509,490 test=219,780 | MCC all= 56.7 (AUC 0.958, malF1 58.6) | no-pos= 59.7 | pos-only= 25.3
+ seed2: train=509,490 test=219,780 | MCC all= 54.8 (AUC 0.955, malF1 53.4) | no-pos= 56.7 | pos-only= 27.7
+ seed3: train=509,490 test=219,780 | MCC all= 53.5 (AUC 0.958, malF1 54.9) | no-pos= 54.2 | pos-only= 27.9
+
+-- data/cache_v1_aug.pt  mean over 3 seeds --
+RF all features : MCC  55.0   ROC-AUC 0.957   malicious-F1 55.6
+RF NO position  : MCC  56.9   (drop -1.9)
+RF position only: MCC  27.0
+
+permutation importance (MCC drop x100 when feature shuffled, seed 3):
+  |dspeed|       +34.6  #####################################################################
+  in_degree      +24.4  ################################################
+  speed          +11.8  #######################
+  |dhead|         +7.1  ##############
+  heading         +5.8  ###########
+  x               +5.5  ##########
+  y               +5.3  ##########
+  sensor_type     +4.5  ########
+  weather         +4.1  ########
+  |daccel|        +3.5  #######
+  sensor_range    +3.5  ######
+  visibility      +3.4  ######
+  |dx|            +3.0  #####
+  kin_resid       +3.0  #####
+  |dy|            +2.2  ####
+  pos_jump        +2.0  ####
+  accel           +0.5  
+
+[BuST-ADMA ref: vd MCC ~56 raw / ~75 eng; abs-x is top feature, ~31 MCC drop if removed]
+===ALLDONE===
