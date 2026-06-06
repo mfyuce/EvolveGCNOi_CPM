@@ -1,0 +1,32 @@
+===V1===
+/home/maya/miniconda3/envs/egcnoi_env/lib/python3.10/site-packages/sklearn/experimental/enable_hist_gradient_boosting.py:18: UserWarning: Since version 1.0, it is not needed to import enable_hist_gradient_boosting anymore. HistGradientBoostingClassifier and HistGradientBoostingRegressor are now stable and can be normally imported from sklearn.ensemble.
+  warnings.warn(
+cache=data/cache_v1.pt  RAW=9f RICH=11f  samples=729,270  malicious=4.23%  (3s)
+
+feat      model  MCC(mean±std)     ROC   malF1   benF1
+----------------------------------------------------
+RAW       RF     36.2± 6.2  0.909    30.6    94.5
+RAW       HGB    36.4± 5.6  0.914    29.8    93.8
+RICH      RF     60.6± 2.6  0.966    61.9    98.5
+RICH      HGB    55.1± 3.2  0.966    56.7    98.0
+RAW+RICH  RF     61.4± 2.8  0.968    62.2    98.5
+RAW+RICH  HGB    56.5± 3.5  0.967    58.0    98.1
+
+[targets: published 0.61 | GNN gconvgru raw45.9/aug48.6/tuned50.0 | RF-aug probe 55.0]  (379s)
+
+===V2===
+/home/maya/miniconda3/envs/egcnoi_env/lib/python3.10/site-packages/sklearn/experimental/enable_hist_gradient_boosting.py:18: UserWarning: Since version 1.0, it is not needed to import enable_hist_gradient_boosting anymore. HistGradientBoostingClassifier and HistGradientBoostingRegressor are now stable and can be normally imported from sklearn.ensemble.
+  warnings.warn(
+cache=data/v2/cache_v2.pt  RAW=10f RICH=11f  samples=729,270  malicious=4.23%  (4s)
+
+feat      model  MCC(mean±std)     ROC   malF1   benF1
+----------------------------------------------------
+RAW       RF     36.3± 6.2  0.911    30.5    94.5
+RAW       HGB    37.0± 5.5  0.914    31.1    93.5
+RICH      RF     60.6± 2.6  0.966    61.9    98.5
+RICH      HGB    55.1± 3.2  0.966    56.7    98.0
+RAW+RICH  RF     60.2± 2.3  0.966    61.6    98.4
+RAW+RICH  HGB    56.8± 3.2  0.967    58.3    98.1
+
+[targets: published 0.61 | GNN gconvgru raw45.9/aug48.6/tuned50.0 | RF-aug probe 55.0]  (387s)
+===ALLDONE===
