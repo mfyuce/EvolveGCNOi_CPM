@@ -1,0 +1,20 @@
+RESULT model=gconvgru seed=1 dataset=cache_v1_rich.pt mcc=53.05 macro_f1=75.75 mal_f1=53.20 ben_f1=98.30 roc_auc=0.9400 acc=96.72 thr=0.67 H=32 W=24 ep=40 lr=0.01 tag=g_rich
+RESULT model=gconvgru seed=2 dataset=cache_v1_rich.pt mcc=54.29 macro_f1=74.89 mal_f1=51.24 ben_f1=98.53 roc_auc=0.9456 acc=97.15 thr=0.75 H=32 W=24 ep=40 lr=0.01 tag=g_rich
+RESULT model=gconvgru seed=3 dataset=cache_v1_rich.pt mcc=50.57 macro_f1=74.79 mal_f1=51.33 ben_f1=98.25 roc_auc=0.9472 acc=96.62 thr=0.63 H=32 W=24 ep=40 lr=0.01 tag=g_rich
+RESULT model=gconvgru seed=4 dataset=cache_v1_rich.pt mcc=47.08 macro_f1=73.09 mal_f1=48.72 ben_f1=97.45 roc_auc=0.9472 acc=95.14 thr=0.60 H=32 W=24 ep=40 lr=0.01 tag=g_rich
+RESULT model=gconvgru seed=5 dataset=cache_v1_rich.pt mcc=44.89 macro_f1=71.83 mal_f1=45.34 ben_f1=98.32 roc_auc=0.9352 acc=96.73 thr=0.60 H=32 W=24 ep=40 lr=0.01 tag=g_rich
+RESULT hybrid seed=1 gnn_mcc=52.95 hgb_mcc=68.03 hgb_auc=0.9775 hgb_malf1=69.41 rf_mcc=67.17 rf_auc=0.9770 rf_malf1=68.54 feat=53 (732s)
+RESULT hybrid seed=2 gnn_mcc=54.29 hgb_mcc=64.99 hgb_auc=0.9775 hgb_malf1=66.41 rf_mcc=63.29 rf_auc=0.9703 rf_malf1=63.47 feat=53 (730s)
+RESULT hybrid seed=3 gnn_mcc=50.23 hgb_mcc=64.80 hgb_auc=0.9779 hgb_malf1=66.20 rf_mcc=62.71 rf_auc=0.9684 rf_malf1=64.17 feat=53 (732s)
+RESULT hybrid seed=4 gnn_mcc=47.08 hgb_mcc=65.32 hgb_auc=0.9785 hgb_malf1=66.63 rf_mcc=62.71 rf_auc=0.9734 rf_malf1=64.15 feat=53 (718s)
+RESULT hybrid seed=5 gnn_mcc=44.89 hgb_mcc=62.21 hgb_auc=0.9758 hgb_malf1=63.43 rf_mcc=58.90 rf_auc=0.9660 rf_malf1=59.87 feat=53 (730s)
+RESULT model=gconvgru seed=1 dataset=cache_v1_rich.pt mcc=55.95 macro_f1=76.72 mal_f1=55.00 ben_f1=98.44 roc_auc=0.9502 acc=96.98 thr=0.81 H=32 W=24 ep=40 lr=0.005 tag=grich_lr005
+RESULT model=gconvgru seed=2 dataset=cache_v1_rich.pt mcc=56.42 macro_f1=77.08 mal_f1=55.61 ben_f1=98.54 roc_auc=0.9514 acc=97.17 thr=0.66 H=32 W=24 ep=40 lr=0.005 tag=grich_lr005
+RESULT model=gconvgru seed=3 dataset=cache_v1_rich.pt mcc=46.72 macro_f1=73.22 mal_f1=48.44 ben_f1=98.00 roc_auc=0.9442 acc=96.15 thr=0.59 H=32 W=24 ep=40 lr=0.005 tag=grich_lr005
+RESULT model=gconvgru seed=4 dataset=cache_v1_rich.pt mcc=52.82 macro_f1=76.32 mal_f1=54.35 ben_f1=98.29 roc_auc=0.9570 acc=96.70 thr=0.71 H=32 W=24 ep=40 lr=0.005 tag=grich_lr005
+RESULT model=gconvgru seed=5 dataset=cache_v1_rich.pt mcc=46.12 macro_f1=72.49 mal_f1=46.65 ben_f1=98.34 roc_auc=0.9416 acc=96.78 thr=0.66 H=32 W=24 ep=40 lr=0.005 tag=grich_lr005
+RESULT model=gconvgru seed=1 dataset=cache_v1_rich.pt mcc=53.60 macro_f1=75.91 mal_f1=53.48 ben_f1=98.33 roc_auc=0.9394 acc=96.78 thr=0.79 H=32 W=24 ep=40 lr=0.01 tag=grich_g1
+RESULT model=gconvgru seed=2 dataset=cache_v1_rich.pt mcc=55.33 macro_f1=75.73 mal_f1=52.91 ben_f1=98.55 roc_auc=0.9498 acc=97.19 thr=0.84 H=32 W=24 ep=40 lr=0.01 tag=grich_g1
+RESULT model=gconvgru seed=3 dataset=cache_v1_rich.pt mcc=50.27 macro_f1=75.01 mal_f1=51.90 ben_f1=98.12 roc_auc=0.9497 acc=96.38 thr=0.86 H=32 W=24 ep=40 lr=0.01 tag=grich_g1
+RESULT model=gconvgru seed=4 dataset=cache_v1_rich.pt mcc=47.97 macro_f1=73.94 mal_f1=50.03 ben_f1=97.86 roc_auc=0.9453 acc=95.89 thr=0.60 H=32 W=24 ep=40 lr=0.01 tag=grich_g1
+RESULT model=gconvgru seed=5 dataset=cache_v1_rich.pt mcc=46.56 macro_f1=73.07 mal_f1=47.89 ben_f1=98.26 roc_auc=0.9419 acc=96.62 thr=0.74 H=32 W=24 ep=40 lr=0.01 tag=grich_g1
