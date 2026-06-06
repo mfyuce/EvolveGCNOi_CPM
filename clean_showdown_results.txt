@@ -1,0 +1,7 @@
+RESULT tabular cache=data/cache_v1_clean.pt F=17 model=RF mcc=66.98 mcc_std=1.84 auc=0.9750
+RESULT tabular cache=data/cache_v1_clean.pt F=17 model=HGB mcc=58.20 mcc_std=2.86 auc=0.9693
+RESULT hybrid seed=1 gnn_mcc=52.57 hgb_mcc=68.03 hgb_auc=0.9775 hgb_malf1=69.42 rf_mcc=63.64 rf_auc=0.9720 rf_malf1=65.08 feat=50 (686s)
+RESULT hybrid seed=2 gnn_mcc=55.10 hgb_mcc=67.08 hgb_auc=0.9787 hgb_malf1=68.41 rf_mcc=63.77 rf_auc=0.9695 rf_malf1=64.63 feat=50 (684s)
+RESULT hybrid seed=3 gnn_mcc=52.08 hgb_mcc=68.72 hgb_auc=0.9808 hgb_malf1=69.97 rf_mcc=68.39 rf_auc=0.9787 rf_malf1=69.70 feat=50 (681s)
+RESULT hybrid seed=4 gnn_mcc=46.81 hgb_mcc=66.37 hgb_auc=0.9801 hgb_malf1=67.41 rf_mcc=66.02 rf_auc=0.9754 rf_malf1=67.32 feat=50 (676s)
+RESULT hybrid seed=5 gnn_mcc=47.14 hgb_mcc=64.39 hgb_auc=0.9778 hgb_malf1=65.59 rf_mcc=62.34 rf_auc=0.9717 rf_malf1=63.38 feat=50 (692s)
