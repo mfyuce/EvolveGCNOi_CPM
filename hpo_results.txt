@@ -1,0 +1,15 @@
+cache=data/cache_v1_clean.pt F=17 samples=729,270 mal=4.23% n_configs=12 (2s)
+  HGB seed1: val=57.2 -> test=65.6 (auc 0.976, malF1 67.1)  best={'learning_rate': 0.1, 'max_iter': 600, 'max_leaf_nodes': 127, 'min_samples_leaf': 100, 'l2_regularization': 1.0, 'max_features': 0.8}
+  HGB seed2: val=54.1 -> test=63.0 (auc 0.974, malF1 64.2)  best={'learning_rate': 0.05, 'max_iter': 600, 'max_leaf_nodes': 127, 'min_samples_leaf': 50, 'l2_regularization': 0.1, 'max_features': 1.0}
+  HGB seed3: val=54.1 -> test=60.2 (auc 0.970, malF1 61.3)  best={'learning_rate': 0.1, 'max_iter': 600, 'max_leaf_nodes': 127, 'min_samples_leaf': 100, 'l2_regularization': 1.0, 'max_features': 0.8}
+  HGB seed4: val=65.5 -> test=60.6 (auc 0.970, malF1 62.2)  best={'learning_rate': 0.1, 'max_iter': 600, 'max_leaf_nodes': 127, 'min_samples_leaf': 100, 'l2_regularization': 1.0, 'max_features': 0.8}
+  HGB seed5: val=51.1 -> test=56.4 (auc 0.969, malF1 57.3)  best={'learning_rate': 0.1, 'max_iter': 600, 'max_leaf_nodes': 127, 'min_samples_leaf': 100, 'l2_regularization': 1.0, 'max_features': 0.8}
+RESULT hpo model=HGB test_mcc=61.19 test_mcc_std=3.07 auc=0.9721 malf1=62.42  (359s)
+  RF seed1: val=65.2 -> test=73.9 (auc 0.982, malF1 75.0)  best={'n_estimators': 400, 'max_depth': None, 'max_features': 0.5, 'min_samples_leaf': 1}
+  RF seed2: val=64.7 -> test=73.1 (auc 0.982, malF1 74.2)  best={'n_estimators': 400, 'max_depth': None, 'max_features': 0.5, 'min_samples_leaf': 1}
+  RF seed3: val=62.4 -> test=69.7 (auc 0.978, malF1 70.9)  best={'n_estimators': 400, 'max_depth': None, 'max_features': 0.5, 'min_samples_leaf': 1}
+  RF seed4: val=72.5 -> test=69.1 (auc 0.978, malF1 70.2)  best={'n_estimators': 400, 'max_depth': None, 'max_features': 0.5, 'min_samples_leaf': 1}
+  RF seed5: val=60.8 -> test=70.4 (auc 0.979, malF1 71.4)  best={'n_estimators': 400, 'max_depth': None, 'max_features': 0.5, 'min_samples_leaf': 1}
+RESULT hpo model=RF test_mcc=71.25 test_mcc_std=1.92 auc=0.9800 malf1=72.34  (1910s)
+[baseline: default RF clean 67.0±1.8 | published leaky 0.61]
+HPO_ALLDONE
