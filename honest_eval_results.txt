@@ -1,0 +1,11 @@
+winning cfg = {'n_estimators': 400, 'max_features': 0.5, 'min_samples_leaf': 1, 'max_depth': None}
+  seed1: thr_val=0.25 -> test MCC honest=71.0 | test-opt thr=0.25 MCC=71.0 | AUC 0.979
+  seed2: thr_val=0.25 -> test MCC honest=68.8 | test-opt thr=0.25 MCC=68.8 | AUC 0.978
+  seed3: thr_val=0.20 -> test MCC honest=66.2 | test-opt thr=0.20 MCC=66.2 | AUC 0.975
+  seed4: thr_val=0.25 -> test MCC honest=64.1 | test-opt thr=0.20 MCC=64.4 | AUC 0.973
+  seed5: thr_val=0.20 -> test MCC honest=64.4 | test-opt thr=0.25 MCC=64.9 | AUC 0.974
+
+HONEST (threshold on val, test untouched): MCC 66.9±2.6  AUC 0.976
+test-optimistic threshold (reference)      : MCC 67.1±2.5
+threshold optimism = 0.1 MCC
+[ROC-AUC is threshold-free: 0.976 — the honest separability either way]
