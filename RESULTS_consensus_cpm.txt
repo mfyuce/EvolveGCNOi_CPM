@@ -1,0 +1,43 @@
+CPM collective-perception CONSENSUS signal test  (vehicle-disjoint, 2026-06-15, .100)
+=====================================================================================
+Question: the per-node CPM cache collapsed the multi-observer collective-perception
+structure to per-node kinematics + in_degree. Does recovering the discarded cue —
+a vehicle's SELF-report (own BSM) vs the CONSENSUS of OTHERS' observations of it —
+improve unseen-attacker detection over per-node physics (RF ~0.69-0.71)?
+
+Built from raw DB imported_data/burst_adma.db (22.7M rows, observer->target->sensor),
+aligned to cache node order via JSON node_labels (label cross-check = 0, perfect),
+label = cache ground truth (4.2% positive).
+
+SIGNAL (real and generalizing)
+  attacker self-vs-consensus mismatch_pos = 0.234 +/- 0.273   benign = 0.032 +/- 0.069   (7.4x)
+  attacker mismatch_speed                 = 0.074             benign = 0.010
+  consensus-only RF: 34.9 vehicle-disjoint  ~=  36.6 random split  (gap +1.7 => generalizes,
+                     NOT vehicle-specific memorization)
+
+PAIRED RF (10 seeds): physics (rich cache) vs physics + 3 consensus features
+  seed=0 rich=61.86 consensus=58.07 delta=-3.79
+  seed=1 rich=72.40 consensus=69.31 delta=-3.09
+  seed=2 rich=69.55 consensus=66.50 delta=-3.05
+  seed=3 rich=68.69 consensus=65.62 delta=-3.08
+  seed=4 rich=66.38 consensus=62.95 delta=-3.43
+  seed=5 rich=69.51 consensus=64.95 delta=-4.56
+  seed=6 rich=73.32 consensus=71.01 delta=-2.31
+  seed=7 rich=69.47 consensus=65.96 delta=-3.51
+  seed=8 rich=69.51 consensus=65.35 delta=-4.17
+  seed=9 rich=68.93 consensus=66.15 delta=-2.79
+  rich (physics)   69.0 +/- 3.0   (reproduces committed rf_eng exactly -> build validated)
+  + consensus      65.6 +/- 3.3
+  consensus lift   -3.4   (0/10 seeds>0)   Wilcoxon p=0.0020
+
+VERDICT
+  The consensus cue is REAL and GENERALIZING but WEAK (35) and REDUNDANT with per-node
+  physics (68) — a vehicle that spoofs its position also breaks its own displacement-vs-
+  speed consistency (speed_resid), which the tabular RF already reads. Adding the weaker
+  redundant features dilutes RF (max_features=0.5) -> consistent -3.4 MCC drop, AUC ~flat.
+  => Recovering the discarded collective-perception structure does NOT help. A consensus
+  GNN is not warranted (ceiling ~35 << physics 68). CPM "RF wins" (0.71) triply confirmed:
+  GNN family (expC_cpm), best GNN local_preserving (52.5), and now the consensus signal.
+
+Reproduce: build_consensus_cache.py (appends consensus feats to cache_v1_rich.pt ->
+cache_v1_consensus.pt) ; run_consensus_rf.py (paired RF) ; run_consensus_diag.py (vdisj vs random).
