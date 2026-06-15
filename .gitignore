@@ -175,3 +175,6 @@ catboost_info/
 rt.txt
 rt_all.txt
 RESULTS.md
+# consensus-test intermediate aggregations (regenerable from raw DB via build_consensus_cache.py)
+cons_agg.csv
+self_agg.csv
