@@ -31,7 +31,7 @@ Hybrid / alternative
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch_geometric.nn import GCNConv, TopKPooling
+from torch_geometric.nn import GCNConv, TopKPooling, GATv2Conv
 from torch_geometric_temporal.nn.recurrent import GConvGRU, TGCN, EvolveGCNO
 from graphs.recurrent.evolvegcnh_improved import EvolveGCNHImproved
 
@@ -263,6 +263,49 @@ class EvolveHybrid(nn.Module):
         return self.cl(z), H
 
 
+class LocalTemporalPreservingGNN(nn.Module):
+    """
+    Designed to prevent spatial smoothing from destroying local anomaly signals.
+    Runs a purely local (per-node) GRUCell to capture vehicle-history dynamics,
+    then uses GATv2Conv with edge features to aggregate neighbor anomalies/disagreements,
+    and CONCATENATES both to classify.
+    """
+    kind = "node_rec"
+    def __init__(self, in_f, h=32, d=0.5, edge_dim=1):
+        super().__init__()
+        self.local_gru = nn.GRUCell(in_f, h)
+        self.edge_dim = edge_dim
+        self.gat = GATv2Conv(h, h, heads=2, concat=False,
+                             edge_dim=edge_dim, add_self_loops=False)
+        self.lin1 = nn.Linear(h * 2, h)
+        self.cl = nn.Linear(h, 2)
+        self.d = d
+
+    def forward(self, x, ei, ew, H=None):
+        if H is None:
+            H = torch.zeros(x.size(0), self.local_gru.hidden_size, device=x.device)
+        H_new = self.local_gru(x, H)
+        
+        if ew is not None:
+            if ew.ndim == 1:
+                ea = ew.unsqueeze(-1)
+            else:
+                ea = ew
+            if ea.size(-1) < self.edge_dim:
+                padding = torch.zeros(ea.size(0), self.edge_dim - ea.size(-1), device=ea.device)
+                ea = torch.cat([ea, padding], dim=-1)
+            elif ea.size(-1) > self.edge_dim:
+                ea = ea[:, :self.edge_dim]
+        else:
+            ea = None
+            
+        g = F.elu(self.gat(H_new, ei, edge_attr=ea))
+        h_comb = torch.cat([H_new, g], dim=-1)
+        h = F.relu(self.lin1(h_comb))
+        z = F.dropout(h, p=self.d, training=self.training)
+        return self.cl(z), H_new
+
+
 # ─────────────────────────────── registry ──────────────────────────────────────
 def build(name, n_nodes, in_f, h=32, d=0.5, **kw):
     name = name.lower()
@@ -278,6 +321,7 @@ def build(name, n_nodes, in_f, h=32, d=0.5, **kw):
         "evolve_h_jk":     lambda: EvolveHJK(n_nodes, in_f, h, d, proj=kw.get("proj", 32)),   # JK
         "evolve_o":        lambda: EvolveONet(n_nodes, in_f, h, d),         # M5
         "hybrid":          lambda: EvolveHybrid(n_nodes, in_f, h, d, proj=kw.get("proj", 32)),  # M6
+        "local_preserving": lambda: LocalTemporalPreservingGNN(in_f, h, d, edge_dim=kw.get("edge_dim", 1)),
     }
     if name not in table:
         raise ValueError(f"unknown model '{name}'. options: {list(table)}")
@@ -287,5 +331,5 @@ def build(name, n_nodes, in_f, h=32, d=0.5, **kw):
 ALL_MODELS = [
     "gconvgru", "tgcn", "static",
     "evolve_h", "evolve_h_shallow", "evolve_h_resid", "evolve_h_wide",
-    "evolve_h_best", "evolve_h_jk", "evolve_o", "hybrid",
+    "evolve_h_best", "evolve_h_jk", "evolve_o", "hybrid", "local_preserving",
 ]

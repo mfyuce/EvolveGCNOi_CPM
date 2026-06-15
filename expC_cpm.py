@@ -7,7 +7,7 @@ disjoint paired protocol (stratified by node_label, default_rng(SEED), 70/30).
 NOTE: cache kinematics are z-scored, so relational head_dev uses plain (non-circular) difference —
 applied identically to rf_rel/gnn_rel/static_rel/gnn_edge, so the comparison stays valid.
 
-Usage: python expC_cpm.py <cache.pt> <mode:rf_eng|rf_rel|gnn_rel|gnn_edge|static_eng|static_rel> <seed> [epochs] [window]
+Usage: python expC_cpm.py <cache.pt> <mode:rf_eng|rf_rel|gnn_rel|gnn_edge|static_eng|static_rel|local_preserving> <seed> [epochs] [window]
 Prints: RESULT expCcpm mode=.. seed=.. mcc=.. auc=.. malf1=.. macrof1=.. in_f=..
 """
 import os, sys, time
@@ -31,8 +31,8 @@ SEED   = int(sys.argv[3]) if len(sys.argv) > 3 else 3
 EPOCHS = int(sys.argv[4]) if len(sys.argv) > 4 else 40
 WINDOW = int(sys.argv[5]) if len(sys.argv) > 5 else 24
 HIDDEN, LR = 32, 0.01
-need_rel = MODE in ("rf_rel", "gnn_rel", "gnn_edge", "static_rel")
-need_edge = MODE == "gnn_edge"
+need_rel = MODE in ("rf_rel", "gnn_rel", "gnn_edge", "static_rel", "local_preserving")
+need_edge = MODE in ("gnn_edge", "local_preserving")
 
 
 def compute_relational(X, EI, EW, nstep, N):
@@ -137,6 +137,31 @@ class RelEdgeGNN(nn.Module):
         return self.classifier(h), H
 
 
+class LocalTemporalPreservingGNN(nn.Module):
+    """Local per-node GRUCell (no spatial smoothing) for vehicle-history dynamics +
+    GATv2 edge-attention over neighbour disagreements, CONCATENATED so a node's own
+    anomaly is never averaged away. Designed to fix the signal-destruction of
+    graph-convolutional recurrence on the CPM perception graph."""
+    def __init__(self, in_f, edge_dim, hidden=HIDDEN, dropout=0.5):
+        super().__init__()
+        self.local_gru = nn.GRUCell(in_f, hidden)
+        self.gat = GATv2Conv(hidden, hidden, heads=2, concat=False,
+                             edge_dim=edge_dim, add_self_loops=False)
+        self.lin1 = nn.Linear(hidden * 2, hidden)
+        self.classifier = nn.Linear(hidden, 2)
+        self.dropout = dropout
+
+    def forward(self, x, ei, ew, ea=None, H=None):
+        if H is None:
+            H = torch.zeros(x.size(0), self.local_gru.hidden_size, device=x.device)
+        H_new = self.local_gru(x, H)
+        g = F.elu(self.gat(H_new, ei, edge_attr=ea))
+        h_comb = torch.cat([H_new, g], dim=-1)
+        h = F.relu(self.lin1(h_comb))
+        h = F.dropout(h, p=self.dropout, training=self.training)
+        return self.classifier(h), H_new
+
+
 class StaticGCN(nn.Module):
     def __init__(self, in_f, hidden=HIDDEN, dropout=0.5):
         super().__init__()
@@ -207,7 +232,9 @@ def main():
     act = [active[t] for t in range(nstep)]
 
     torch.manual_seed(SEED)
-    if MODE == "gnn_edge":
+    if MODE == "local_preserving":
+        model = LocalTemporalPreservingGNN(in_f, edge_dim=edge_attrs[0].shape[1])
+    elif MODE == "gnn_edge":
         model = RelEdgeGNN(in_f, edge_dim=edge_attrs[0].shape[1])
     elif MODE in ("static_eng", "static_rel"):
         model = StaticGCN(in_f)

@@ -20,7 +20,7 @@ def arr(cfg):
 
 
 print("=== CPM per-config MCC (mean±std, SEM), same harness as BuST ===")
-for cfg in ['gnn_rel', 'gnn_eng', 'gnn_edge', 'static_rel', 'static_eng', 'rf_rel', 'rf_eng']:
+for cfg in ['local_preserving', 'gnn_rel', 'gnn_eng', 'gnn_edge', 'static_rel', 'static_eng', 'rf_rel', 'rf_eng']:
     seeds, v = arr(cfg)
     if len(v) == 0:
         continue
@@ -47,6 +47,10 @@ print("\n=== paired: GNN vs RF (does CPM flip like BuST?) ===")
 paired('gnn_eng', 'rf_eng')
 paired('gnn_rel', 'rf_rel')
 paired('gnn_edge', 'rf_rel')
+print("\n=== paired: local_preserving (does it close the RF gap?) ===")
+paired('local_preserving', 'rf_rel')
+paired('local_preserving', 'rf_eng')
+paired('local_preserving', 'gnn_edge')
 print("\n=== paired: recurrence isolation ===")
 paired('gnn_rel', 'static_rel')
 paired('gnn_eng', 'static_eng')
