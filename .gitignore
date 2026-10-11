@@ -178,3 +178,12 @@ RESULTS.md
 # consensus-test intermediate aggregations (regenerable from raw DB via build_consensus_cache.py)
 cons_agg.csv
 self_agg.csv
+
+# Private working notes live in a separate private repo and must never be committed here.
+# These lines only guard against an accidental `git add -A`.
+/CLAUDE.md
+/AGENTS.md
+/TODO.md
+/TOBEDECIDED.md
+/DONE.md
+/reviews/
